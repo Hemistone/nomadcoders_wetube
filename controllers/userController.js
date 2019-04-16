@@ -2,15 +2,15 @@ import passport from "passport";
 import routes from "../routes";
 import User from "../models/User";
 
-export const getJoin   = (req, res) => {
+export const getJoin = (req, res) => {
     res.render("join", { pageTitle: "Join" });
 };
 
-export const postJoin = async(req, res, next) => {
+export const postJoin = async (req, res, next) => {
     const {
-        body: {name, email, password, password2}
+        body: { name, email, password, password2 }
     } = req;
-    if(password !== password2){
+    if (password !== password2) {
         res.status(400);
         res.render("join", { pageTitle: "Join" });
     } else {
@@ -21,14 +21,14 @@ export const postJoin = async(req, res, next) => {
             });
             await User.register(user, password);
             next();
-        } catch(error) {
+        } catch (error) {
             console.log(error);
             res.redirect(routes.home);
         }
     }
 };
 
-export const getLogin  = (req, res) => res.render("login", { pageTitle: "Login" });
+export const getLogin = (req, res) => res.render("login", { pageTitle: "Login" });
 
 export const postLogin = passport.authenticate("local", {
     failureRedirect: routes.login,
@@ -101,7 +101,7 @@ export const logout = (req, res) => {
 };
 
 export const getMe = (req, res) => {
-    res.render("userDetail", { pageTitle: "User Detail", user: req.user});
+    res.render("userDetail", { pageTitle: "User Detail", user: req.user });
 };
 
 export const userDetail = async (req, res) => {
@@ -116,5 +116,45 @@ export const userDetail = async (req, res) => {
     }
 };
 
-export const editProfile = (req, res) => res.render("editProfile", { pageTitle: "Edit Profile" });
-export const changePassword = (req, res) => res.render("changePassword", { pageTitle: "Change Password" });
+export const getEditProfile = (req, res) => res.render("editProfile", { pageTitle: "Edit Profile" });
+
+export const postEditProfile = async (req, res) => {
+    const {
+        body: { name, email },
+        file
+    } = req;
+    try {
+        await User.findByIdAndUpdate(req.user.id, {
+            name,
+            email,
+            avatarUrl: file ? file.path : req.user.avatarUrl
+        });
+        res.redirect(routes.me);
+    } catch (error) {
+        res.redirect(routes.editProfile);
+    }
+};
+
+export const getChangePassword = (req, res) => res.render("changePassword", { pageTitle: "Change Password" });
+
+export const postChangePassword = async (req, res) => {
+    const {
+        body: { oldPassword, newPassword, newPassword1 }
+    } = req;
+    try {
+        if (newPassword !== newPassword1) {
+            console.log(newPassword);
+            console.log(newPassword1);
+            console.log("checked password");
+            res.status(400);
+            res.redirect(`/users${routes.changePassword}`);
+            return;
+        }
+        await req.user.changePassword(oldPassword, newPassword);
+        res.redirect(routes.me);
+    } catch (error) {
+        res.status(400);
+        console.log("not working changing password");
+        res.redirect(`/users${routes.changePassword}`);
+    }
+};
