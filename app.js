@@ -12,6 +12,7 @@ import routes from "./routes";
 import userRouter from "./routers/userRouter";
 import videoRouter from "./routers/videoRouter";
 import globalRouter from "./routers/globalRouter";
+import apiRouter from "./routers/apiRouter";
 
 import "./passport";
 
@@ -27,7 +28,7 @@ app.use("/static", express.static("static"));
 
 app.use(cookieParser()); //check cookies
 app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({extended: true})); //checks json or form elements in body
+app.use(bodyParser.urlencoded({ extended: true })); //checks json or form elements in body
 app.use(morgan("dev")); //log all histories
 app.use(session({
     secret: process.env.COOKIE_SECRET,
@@ -43,5 +44,6 @@ app.use(localsMiddleware);
 app.use(routes.home, globalRouter);
 app.use(routes.users, userRouter);
 app.use(routes.videos, videoRouter);
+app.use(routes.api, apiRouter);
 
 export default app;

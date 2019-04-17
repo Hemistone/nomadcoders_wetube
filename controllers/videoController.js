@@ -1,5 +1,6 @@
 import routes from "../routes";
 import Video from "../models/video";
+import Comment from "../models/comment";
 
 export const home = async (req, res) => {
     try {
@@ -55,7 +56,9 @@ export const videoDetail = async (req, res) => {
         params: { id }
     } = req;
     try {
-        const video = await Video.findById(id).populate("creator");
+        const video = await Video.findById(id)
+            .populate("creator")
+            .populate("comments");
         console.log(video);
         res.render("videoDetail", { pageTitle: Video.title, video });
     } catch (error) {
@@ -109,4 +112,73 @@ export const deleteVideo = async (req, res) => {
 
     }
     res.redirect(routes.home);
-}
+};
+
+// Register Video View
+
+export const postRegisterView = async (req, res) => {
+    const {
+        params: { id }
+    } = req;
+    try {
+        const video = await Video.findById(id);
+        video.views += 1;
+        video.save();
+        res.status(200);
+    } catch (error) {
+        res.status(400);
+    } finally {
+        res.end();
+    }
+};
+
+// Add Comment
+
+export const postAddComment = async (req, res) => {
+    const {
+        params: { id },
+        body: { comment },
+        user
+    } = req;
+    try {
+        const video = await Video.findById(id);
+        const newComment = await Comment.create({
+            text: comment,
+            creator: user.id
+        });
+        video.comments.push(newComment.id);
+        video.save();
+    } catch (error) {
+        res.status(400);
+    } finally {
+        res.end();
+    }
+};
+
+export const postDelComment = async (req, res) => {
+    const {
+        params: { video, cmtid }
+    } = req;
+    try {
+        const vid = await Video.findById(video);
+        const deletingComment = await Comment.findById(cmtid);
+        for (let comment of vid.comments) {
+            let cmt = comment._id.toString();
+            if (cmt == cmtid) {
+                vid.comments.pull(deletingComment.id);
+                vid.save();
+                await Comment.findOneAndRemove({ _id: cmt });
+                console.log("removed comment from database");
+                break;
+            } else {
+                console.log("no comment found...");
+            }
+        }
+        res.redirect(`/videos/${video}`);
+    } catch (error) {
+        console.log(error);
+        res.status(400);
+    } finally {
+        res.end();
+    }
+};
